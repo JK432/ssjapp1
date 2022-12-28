@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ssjapp1/home.dart';
 
 void main() {
   runApp(const MyApp());
@@ -54,6 +55,11 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
+            ElevatedButton(onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(builder: ((context) {
+                return AddSub();
+              })));
+            }, child: const Text('go to next page'))
           ],
         ),
       ),
