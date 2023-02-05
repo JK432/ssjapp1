@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:ssjapp1/database/subject_db.dart';
+import 'package:ssjapp1/dbshow.dart';
 import 'package:ssjapp1/home.dart';
+import 'package:ssjapp1/addSub.dart';
 
 void main() {
   runApp(const MyApp());
@@ -57,9 +60,17 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             ElevatedButton(onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(builder: ((context) {
-                return AddSub();
+                return InsertSubjectPage();
               })));
-            }, child: const Text('go to next page'))
+            }, child: const Text('go to add sub')),
+            ElevatedButton(onPressed: () async{
+              Navigator.of(context).push(MaterialPageRoute(builder: ((context) {
+                // var querydb=  DatabaseHelper.instance.getAllSubjects();
+                // print(querydb);
+                // return Text('');
+                return ShowSub();
+              })));
+            }, child: const Text('go to show sub'))
           ],
         ),
       ),
