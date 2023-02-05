@@ -1,114 +1,61 @@
+import 'dart:io';
+
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:ssjapp1/models/subject_model.dart';
 
-import '../models/subject_model.dart';
-
-class SubjectDataBase {
-  static final SubjectDataBase instance = SubjectDataBase._init();
+class DatabaseHelper {
+  DatabaseHelper._privateConstructor();
+  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
 
   static Database? _database;
+  Future<Database> get database async => _database ??= await _initDatabase();
 
-  SubjectDataBase._init();
-
-  Future<Database> get database async {
-    if (_database != null) return _database!;
-
-    _database = await _initDB('subjects.db');
-    return _database!;
-  }
-
-  Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
-
-    return await openDatabase(path, version: 1, onCreate: _createDB);
-  }
-
-  Future _createDB(Database db, int version) async {
-    final idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-    final textType = 'TEXT NOT NULL';
-    final integerType = 'INTEGER NOT NULL';
-
-    await db.execute('''
-CREATE TABLE $tableSubjects ( 
-  ${SubjectFields.subid} $idType, 
-  ${SubjectFields.subname} $textType,
-  ${SubjectFields.subcode} $textType,
-  ${SubjectFields.totcls} $integerType,
-  ${SubjectFields.totatd} $integerType,
-  )
-''');
-  }
-
-  Future<Subject> create(Subject subject) async {
-    final db = await instance.database;
-
-    // final json = note.toJson();
-    // final columns =
-    //     '${NoteFields.title}, ${NoteFields.description}, ${NoteFields.time}';
-    // final values =
-    //     '${json[NoteFields.title]}, ${json[NoteFields.description]}, ${json[NoteFields.time]}';
-    // final id = await db
-    //     .rawInsert('INSERT INTO table_name ($columns) VALUES ($values)');
-
-    final id = await db.insert(tableSubjects, subject.toJson());
-    return subject.copy(id: id);
-  }
-
-  Future<Subject> readSub(int id) async {
-    final db = await instance.database;
-
-    final maps = await db.query(
-      tableSubjects,
-      columns: SubjectFields.values,
-      where: '${SubjectFields.subid} = ?',
-      whereArgs: [id],
+  Future<Database> _initDatabase() async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = join(documentsDirectory.path, 'subjects.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _onCreate,
     );
-
-    if (maps.isNotEmpty) {
-      return Subject.fromJson(maps.first);
-    } else {
-      throw Exception('ID $id not found');
-    }
   }
 
-  Future<List<Subject>> readAllSubs() async {
-    final db = await instance.database;
+  Future _onCreate(Database db, int version) async {
+    await db.execute('''
+    CREATE TABLE subjects (
+      id INTEGER PRIMARY KEY,
+      name TEXT,
+      quantity INTEGER
+    )
+    ''');
+  }
 
-    // final orderBy = '${SubjectFields.time} ASC';
-    // final result =
-    //     await db.rawQuery('SELECT * FROM $tableNotes ORDER BY $orderBy');
+  Future<List<Subject>> getSubjects() async{
+    Database db = await instance.database;
+    var subjects = await db.query('subjects',orderBy: 'name');
+    List<Subject> subList = subjects.isNotEmpty 
+    ? subjects.map((json) => Subject.fromMap(json)).toList()
+    : [];
+    return subList;
+  }
 
-    // final result = await db.query(tableNotes, orderBy: orderBy);
-    final result = await db.query(tableSubjects );
+  Future<int> add(Subject subject) async{
+    Database db = await instance.database;
+    return await db.insert('subjects', subject.toMap());
+  }
 
-    return result.map((json) => Subject.fromJson(json)).toList();
+  Future<int> remove(int id) async {
+    Database db = await instance.database;
+    return await db.delete('subjects', where: 'id=?',whereArgs: [id]);
   }
 
   Future<int> update(Subject subject) async {
-    final db = await instance.database;
-
-    return db.update(
-      tableSubjects,
-      subject.toJson(),
-      where: '${SubjectFields.subid} = ?',
-      whereArgs: [subject.id],
-    );
+    Database db = await instance.database;
+    return await db.update('subjects', subject.toMap(),where: 'id=?',whereArgs: [subject.id]);
   }
 
-  Future<int> delete(int id) async {
-    final db = await instance.database;
 
-    return await db.delete(
-      tableSubjects,
-      where: '${SubjectFields.subid} = ?',
-      whereArgs: [id],
-    );
-  }
 
-  Future close() async {
-    final db = await instance.database;
-
-    db.close();
-  }
 }
